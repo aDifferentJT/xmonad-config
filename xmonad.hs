@@ -1,5 +1,5 @@
 import XMonad
-import XMonad.StackSet (focusDown, shift, shiftWin, stack, tag, integrate, currentTag)
+import XMonad.StackSet (focusDown, shift, shiftWin, stack, tag, integrate, currentTag, view)
 import qualified XMonad.StackSet
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageDocks
@@ -53,26 +53,48 @@ myKeys = [
     (\winSet ->
       maybe (return ())
         (\wins -> 
-          (\win -> windows $ shiftWin (currentTag winSet) win)
-          =<< head
-          <$> (
-            (\title -> filterM (((== title) <$> show <$>) . getName) (integrate wins))
-            =<< myDmenu
-            =<< (
-              sequence
-              . map ((show <$>) . getName)
-              . integrate
-              $ wins
-              )
+          (\win -> windows $ shiftWin (currentTag winSet) win) =<<
+          head <$> (
+            (\title -> filterM (((== title) <$> show <$>) . getName) (integrate wins)) =<<
+            myDmenu =<< (
+              sequence .
+              map ((show <$>) . getName) .
+              integrate $
+              wins
             )
           )
-      . stack
-      . head
-      . filter ((== minimiseWorkspace) . tag)
-      . XMonad.StackSet.workspaces
-      $ winSet
+        ) .
+      stack .
+      head .
+      filter ((== minimiseWorkspace) . tag) .
+      XMonad.StackSet.workspaces $
+      winSet
+    )
+  ),
+  ((myModMask, xK_backslash), withWindowSet
+    (\winSet ->
+      windows =<<
+      view <$>
+      tag <$>
+      head <$> (
+        (\title -> filterM (
+          (elem title <$>) .
+          sequence .
+          map ((show <$>) . getName) .
+          maybe [] integrate .
+          stack
+        ) (XMonad.StackSet.workspaces winSet)) =<<
+        myDmenu =<< (
+          sequence .
+          map ((show <$>) . getName) .
+          concat .
+          map (maybe [] integrate . stack) .
+          XMonad.StackSet.workspaces $
+          winSet
+        )
       )
-    ),
+    )
+  ),
   ((myModMask, xF86XK_MonBrightnessDown), spawn "bash -c \"setBrightness 1\""),
   ((myModMask .|. shiftMask, xF86XK_MonBrightnessDown), spawn "bash -c \"setBrightness 0\""),
   ((myModMask, xF86XK_MonBrightnessUp), spawn "bash -c \"setBrightness $(cat /sys/class/backlight/intel_backlight/max_brightness)\"")
@@ -97,6 +119,7 @@ main = do
                 ppOutput = hPutStrLn xmproc,
                 ppTitle = xmobarColor "green" "" . shorten 50,
                 ppCurrent = xmobarColor "black" "green",
+                ppVisible = xmobarColor "orange" "black",
                 ppHidden  = xmobarColor "green" "black"
                 }
     }
