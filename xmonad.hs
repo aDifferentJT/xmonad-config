@@ -74,8 +74,8 @@ myKeys = [
   ((myModMask, xK_backslash), withWindowSet
     (\winSet ->
       windows =<<
-      view <$>
-      tag <$>
+      view .
+      tag .
       head <$> (
         (\title -> filterM (
           (elem title <$>) .
