@@ -30,7 +30,6 @@ myDmenu = menuArgs "dmenu" ["-i", "-nf", "green", "-nb", "black", "-sf", "black"
 myManageHook = composeAll [
                  isDialog --> doCenterFloat,
                  isFullscreen --> (doF focusDown <+> doFullFloat)
-                 --className =? "GNUMail" --> doFloat
                  ]
 
 myStartupHook = do
@@ -107,7 +106,7 @@ myModMask = mod4Mask
 
 main = do
   xmproc <- spawnPipe "xmobar"
-  (xmonad . ewmh . flip additionalKeys myKeys) def {
+  (xmonad . ewmh . flip additionalKeys myKeys . docks) def {
     manageHook = manageDocks <+> myManageHook <+> manageHook defaultConfig,
     layoutHook = smartBorders $ avoidStruts  $  layoutHook defaultConfig,
     handleEventHook = handleEventHook def <+> fullscreenEventHook,
